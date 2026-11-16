@@ -181,10 +181,6 @@ export const Step3EscolhaImovel: React.FC<Step3EscolhaImovelProps> = ({
                 {empreendimento.bairro}
               </p>
             </div>
-            <div className="text-right">
-              <span className="text-[10px] text-[#71717A] block font-semibold uppercase">Entrega Prevista</span>
-              <span className="text-xs font-black text-white">{empreendimento.previsaoEntrega}</span>
-            </div>
           </div>
         </div>
 
