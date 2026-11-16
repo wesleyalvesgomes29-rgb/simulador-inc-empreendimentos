@@ -109,6 +109,28 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   const [displayDoc, setDisplayDoc] = useState<string>(
     valorDocumentacao > 0 ? formatBRL(valorDocumentacao) : ''
   );
+  const [displayPercentualEncash, setDisplayPercentualEncash] = useState<string>(String(percentualEncash));
+
+  useEffect(() => {
+    setDisplayPercentualEncash(String(percentualEncash));
+  }, [percentualEncash]);
+
+  const handlePercentualEncashChange = (value: string) => {
+    setDisplayPercentualEncash(value);
+    const numericValue = Number(value.replace(',', '.'));
+    if (value.trim() !== '' && Number.isFinite(numericValue) && numericValue >= 12 && numericValue <= 22) {
+      setPercentualEncash(numericValue);
+    }
+  };
+
+  const handlePercentualEncashBlur = () => {
+    const numericValue = Number(displayPercentualEncash.replace(',', '.'));
+    const safeValue = displayPercentualEncash.trim() === '' || !Number.isFinite(numericValue)
+      ? 12
+      : Math.min(22, Math.max(12, numericValue));
+    setPercentualEncash(safeValue);
+    setDisplayPercentualEncash(String(safeValue));
+  };
 
   // Encash: modelo-base estimado a partir das operações reais informadas.
   // Capitaliza 1,45% a.m. por 36 meses sobre o valor liberado e divide
@@ -276,19 +298,19 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
           <div className="flex items-center justify-between"><span className="text-xs font-black text-[#FF600B] uppercase tracking-wider">ENCASH • ESTIMATIVA</span><span className="text-[10px] text-[#A3A3A3]">Base: valor de venda</span></div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="block text-[10px] text-[#A3A3A3] font-bold uppercase mb-1">Percentual (12% a 22%)</label>
-              <div className="flex items-center gap-2"><input type="number" min="12" max="22" step="0.1" value={percentualEncash} onChange={(e) => setPercentualEncash(Math.min(22, Math.max(12, Number(e.target.value) || 12)))} className="w-full bg-[#111] border border-[#333] rounded-xl px-3 py-2 text-white font-black outline-none focus:border-[#FF600B]" /><span className="text-white font-bold">%</span></div>
+              <div className="flex items-center gap-2"><input type="text" inputMode="decimal" minLength={1} value={displayPercentualEncash} onChange={(e) => handlePercentualEncashChange(e.target.value)} onBlur={handlePercentualEncashBlur} onFocus={(e) => e.currentTarget.select()} aria-label="Percentual Encash entre 12 e 22" className="w-full bg-white border border-[#FF600B] rounded-xl px-3 py-2 text-[#171717] font-black outline-none focus:ring-2 focus:ring-[#FF600B]/30" /><span className="text-white font-bold">%</span></div>
             </div>
             <div><label className="block text-[10px] text-[#A3A3A3] font-bold uppercase mb-1">Prazo Encash</label>
               <select value={qtdParcelasEncash} onChange={(e) => setQtdParcelasEncash(Math.min(72, Math.max(1, Number(e.target.value))))} className="w-full bg-[#111] border border-[#333] rounded-xl px-3 py-2 text-white font-bold outline-none focus:border-[#FF600B]">{Array.from({length:72},(_,i)=>i+1).map(n=><option key={n} value={n}>{n}x</option>)}</select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl p-3 border border-[#3A3A3A]" style={{ backgroundColor: '#111111' }}>
-              <span className="text-[10px] block" style={{ color: '#A3A3A3' }}>Valor liberado estimado</span>
+            <div className="rounded-xl p-3 border border-[#FF600B]" style={{ backgroundColor: '#FF600B' }}>
+              <span className="text-[10px] block font-semibold" style={{ color: '#FFFFFF' }}>Valor liberado estimado</span>
               <strong className="text-lg font-black block mt-1" style={{ color: '#FFFFFF' }}>{formatBRL(valorEncashEstimado)}</strong>
             </div>
-            <div className="rounded-xl p-3 border border-[#3A3A3A]" style={{ backgroundColor: '#111111' }}>
-              <span className="text-[10px] block" style={{ color: '#A3A3A3' }}>Parcela estimada ({qtdParcelasEncash}x)</span>
+            <div className="rounded-xl p-3 border border-[#FF600B]" style={{ backgroundColor: '#FF600B' }}>
+              <span className="text-[10px] block font-semibold" style={{ color: '#FFFFFF' }}>Parcela estimada ({qtdParcelasEncash}x)</span>
               <strong className="text-lg font-black block mt-1" style={{ color: '#FFFFFF' }}>{formatBRL(parcelaEncashEstimada)}</strong>
             </div>
           </div>
