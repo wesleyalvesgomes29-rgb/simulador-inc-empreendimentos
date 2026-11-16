@@ -144,25 +144,73 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   const parcelaEncashEstimada = qtdParcelasEncash > 0
     ? Number((totalEncashProjetado / qtdParcelasEncash).toFixed(2))
     : 0;
+  // IPCA médio mensal: média aritmética das últimas 12 variações mensais oficiais do IBGE.
+  const [ipcaMediaMensal, setIpcaMediaMensal] = useState<number>(0);
+  const [ipcaStatus, setIpcaStatus] = useState<'loading' | 'live' | 'cached' | 'error'>('loading');
+
+  useEffect(() => {
+    let ativo = true;
+    const carregarIpca = async () => {
+      try {
+        const response = await fetch('https://apisidra.ibge.gov.br/values/t/1737/n1/1/v/63/p/last%2012', {
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) throw new Error(`IBGE HTTP ${response.status}`);
+        const rows: Array<Record<string, string>> = await response.json();
+        const valores = rows.slice(1)
+          .map((row) => Number(String(row.V ?? '').replace(',', '.')))
+          .filter((value) => Number.isFinite(value));
+        if (valores.length !== 12) throw new Error('Não foi possível obter os 12 índices mensais do IPCA.');
+        const media = valores.reduce((sum, value) => sum + value, 0) / valores.length;
+        if (!ativo) return;
+        setIpcaMediaMensal(media);
+        setIpcaStatus('live');
+        try {
+          localStorage.setItem('inc_ipca_media_12m_construtora', JSON.stringify({ media, atualizadoEm: new Date().toISOString() }));
+        } catch { /* cache local opcional */ }
+      } catch {
+        try {
+          const cached = localStorage.getItem('inc_ipca_media_12m_construtora');
+          if (cached) {
+            const parsed = JSON.parse(cached) as { media?: number };
+            if (Number.isFinite(parsed.media)) {
+              if (ativo) {
+                setIpcaMediaMensal(Number(parsed.media));
+                setIpcaStatus('cached');
+              }
+              return;
+            }
+          }
+        } catch { /* cache inválido */ }
+        if (ativo) setIpcaStatus('error');
+      }
+    };
+    carregarIpca();
+    return () => { ativo = false; };
+  }, []);
+
   const saldoAposEncash = Number((saldoEntrada - valorEncashEstimado).toFixed(2));
   const saldoDisponivelConstrutora = Math.max(0, saldoAposEncash);
   const totalSinal = sinalAVista || 0;
   const totalIntermediarias = (intermediarias || []).reduce((acc, item) => acc + (item.valor || 0), 0);
 
-  // Regra INC: sinal e balões são opcionais. Todo o saldo que não for
-  // destinado a eles fica automaticamente com a construtora em 48 parcelas.
+  // Correção simples (não composta): saldo x [1 + (IPCA médio mensal + 0,99%) x 48].
+  // O saldo principal continua sendo usado na distribuição; juros entram somente na projeção das parcelas.
+  const taxaConstrutoraMensal = (ipcaMediaMensal / 100) + 0.0099;
   const totalConstrutora = Math.max(
     0,
     Number((saldoDisponivelConstrutora - totalSinal - totalIntermediarias).toFixed(2))
   );
-  const valorParcelaObraCalculada = Number((totalConstrutora / 48).toFixed(2));
+  const totalConstrutoraCorrigido = Number((totalConstrutora * (1 + taxaConstrutoraMensal * 48)).toFixed(2));
+  const valorParcelaObraCalculada = Number((totalConstrutoraCorrigido / 48).toFixed(2));
   const totalDistribuido = totalSinal + totalIntermediarias + totalConstrutora;
   const saldoRestante = Number((saldoDisponivelConstrutora - totalDistribuido).toFixed(2));
 
   const distributeRemainingEqually = (customSinal?: number) => {
     const activeSinal = customSinal !== undefined ? customSinal : totalSinal;
     const restante = Math.max(0, saldoDisponivelConstrutora - activeSinal - totalIntermediarias);
-    const valParc = Number((restante / 48).toFixed(2));
+    const totalComCorrecao = restante * (1 + taxaConstrutoraMensal * 48);
+    const valParc = Number((totalComCorrecao / 48).toFixed(2));
     setQtdParcelasObra(48);
     setValorParcelaObra(valParc);
     setQtdParcelasPosObra(0);
@@ -355,8 +403,8 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
 
               {totalConstrutora > 0 && (
                 <div className="flex justify-between items-center text-[#FF7A00]">
-                  <span className="font-semibold">(-) Construtora (48x de {formatBRL(valorParcelaObra)}):</span>
-                  <span className="font-bold">{formatBRL(totalConstrutora)}</span>
+                  <span className="font-semibold">(-) Construtora (48x de {formatBRL(valorParcelaObraCalculada)}):</span>
+                  <span className="font-bold">{formatBRL(totalConstrutoraCorrigido)}</span>
                 </div>
               )}
               {saldoRestante > 0.009 && (
@@ -557,7 +605,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
                 <Building2 className="w-4 h-4 text-[#FF600B]" />
                 CONSTRUTORA (48X)
               </span>
-              <span className="text-xs font-bold text-[#A3A3A3]">Total: {formatBRL(totalConstrutora)}</span>
+              <span className="text-xs font-bold text-[#A3A3A3]">Total corrigido: {formatBRL(totalConstrutoraCorrigido)}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -571,7 +619,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
                 </div>
               </div>
             </div>
-            <p className="text-[10px] text-[#A3A3A3]">Valor calculado automaticamente: saldo restante após sinal e balões, dividido em 48 parcelas.</p>
+            <p className="text-[10px] text-[#A3A3A3]">Estimativa com correção simples mensal de IPCA médio (últimos 12 meses) + 0,99% a.m., aplicada por 48 meses e dividida em 48 parcelas fixas.{ipcaStatus === 'loading' ? ' Consultando IPCA…' : ipcaStatus === 'cached' ? ' Usando a última média do IPCA salva.' : ipcaStatus === 'error' ? ' IPCA indisponível: valor provisório calculado apenas com 0,99% a.m.; confira antes de apresentar.' : ''}</p>
           </div>
 
           {/* 7. DOCUMENTAÇÃO (ITBI + REGISTRO) */}
