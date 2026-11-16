@@ -24,6 +24,10 @@ interface Step5IncFlowProps {
   propertyDetails: PropertyDetails;
   valorImovel: number;
   saldoEntrada: number;
+  percentualEncash: number;
+  setPercentualEncash: (val: number) => void;
+  qtdParcelasEncash: number;
+  setQtdParcelasEncash: (val: number) => void;
   sinalAVista: number;
   setSinalAVista: (val: number) => void;
   
@@ -61,6 +65,10 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   propertyDetails,
   valorImovel,
   saldoEntrada,
+  percentualEncash,
+  setPercentualEncash,
+  qtdParcelasEncash,
+  setQtdParcelasEncash,
   sinalAVista,
   setSinalAVista,
   
@@ -109,26 +117,18 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
     valorDocumentacao > 0 ? formatBRL(valorDocumentacao) : ''
   );
 
-  // 1. REGRA 23% PRÓ-SOLUTO INC & CÁLCULO ENTRADA MÍNIMA
-  // Pegue o valorTotalImovel * 0.23 (teto permitido de 23%)
-  const tetoPermitido = Number((valorImovel * 0.23).toFixed(2));
-  const saldoDevedorTotal = saldoEntrada;
-
-  // Calcule a diferença que sobra da entrada: saldoDevedorTotal - tetoPermitido
-  const diferencaEntradaMinima = saldoDevedorTotal > tetoPermitido
-    ? Number((saldoDevedorTotal - tetoPermitido).toFixed(2))
-    : 0;
-
-  // Pró-soluto a financiar (saldo abatido do sinal pago em dinheiro)
+  // Encash: estimativa comercial calculada sobre o valor de venda do imóvel.
+  const percentualEncashSeguro = Math.min(22, Math.max(12, Number(percentualEncash) || 22));
+  const valorEncashEstimado = Number((valorImovel * percentualEncashSeguro / 100).toFixed(2));
+  const parcelaEncashEstimada = qtdParcelasEncash > 0 ? Number((valorEncashEstimado / qtdParcelasEncash).toFixed(2)) : 0;
+  const saldoAposEncash = Number((saldoEntrada - valorEncashEstimado).toFixed(2));
+  const saldoDisponivelConstrutora = Math.max(0, saldoAposEncash);
   const totalSinal = sinalAVista || 0;
   const totalIntermediarias = (intermediarias || []).reduce((acc, item) => acc + (item.valor || 0), 0);
-  const proSolutoEfetivo = Math.max(0, saldoDevedorTotal - totalSinal);
-  const percentualProSoluto = valorImovel > 0 ? (proSolutoEfetivo / valorImovel) * 100 : 0;
-  const dentroLimite23 = proSolutoEfetivo <= tetoPermitido + 0.05;
 
   // 2. ELIMINAÇÃO DE RESÍDUO DE CENTAVOS NAS PARCELAS
   // Saldo restante que vai para as parcelas mensais de obra e pós-obra
-  const saldoParaParcelar = Math.max(0, saldoEntrada - totalSinal - totalIntermediarias);
+  const saldoParaParcelar = Math.max(0, saldoDisponivelConstrutora - totalSinal - totalIntermediarias);
   const totalParcelasQtd = (qtdParcelasObra || 0) + (tipoEstrutura === 'planta' ? (qtdParcelasPosObra || 0) : 0);
 
   // Totais calculados
@@ -146,12 +146,12 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   const totalObra = totalObraBase + sobraCentavos;
 
   const totalDistribuido = totalSinal + totalObra + totalPosObra + totalIntermediarias;
-  const saldoRestante = Number((saldoEntrada - totalDistribuido).toFixed(2));
+  const saldoRestante = Number((saldoDisponivelConstrutora - totalDistribuido).toFixed(2));
 
   // Função central para dividir o saldo entre as parcelas de obra e pós-obra
   const distributeRemainingEqually = (customSinal?: number) => {
     const activeSinal = customSinal !== undefined ? customSinal : totalSinal;
-    const restante = Math.max(0, saldoEntrada - activeSinal - totalIntermediarias);
+    const restante = Math.max(0, saldoDisponivelConstrutora - activeSinal - totalIntermediarias);
 
     if (tipoEstrutura === 'planta') {
       const tot = (qtdParcelasObra || 0) + (qtdParcelasPosObra || 0);
@@ -316,31 +316,24 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
           </button>
         </div>
 
-        {/* 1. REGRA DE LIMITE DE 23% PRÓ-SOLUTO INC */}
-        <div className={`p-4 rounded-2xl border-2 mb-5 transition-all ${
-          dentroLimite23 
-            ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
-            : 'bg-amber-950/30 border-amber-500/40 text-amber-300'
-        }`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className={`w-5 h-5 ${dentroLimite23 ? 'text-emerald-400' : 'text-amber-400'}`} />
-              <div>
-                <span className="text-xs font-black uppercase tracking-wider block">
-                  Regra INC • Limite de 23% de Pró-Soluto
-                </span>
-                <span className="text-[11px] font-medium opacity-90">
-                  Pró-Soluto Atual: <strong className="text-white">{formatBRL(proSolutoEfetivo)}</strong> ({percentualProSoluto.toFixed(1)}% do imóvel)
-                </span>
-              </div>
+        {/* Encash - estimativa comercial */}
+        <div className="bg-[#1A1A1A] p-4 rounded-2xl border-2 border-[#FF600B]/50 mb-5 space-y-3">
+          <div className="flex items-center justify-between"><span className="text-xs font-black text-[#FF600B] uppercase tracking-wider">ENCASH • ESTIMATIVA</span><span className="text-[10px] text-[#A3A3A3]">Base: valor de venda</span></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="block text-[10px] text-[#A3A3A3] font-bold uppercase mb-1">Percentual (12% a 22%)</label>
+              <div className="flex items-center gap-2"><input type="number" min="12" max="22" step="0.1" value={percentualEncash} onChange={(e) => setPercentualEncash(Math.min(22, Math.max(12, Number(e.target.value) || 12)))} className="w-full bg-[#111] border border-[#333] rounded-xl px-3 py-2 text-white font-black outline-none focus:border-[#FF600B]" /><span className="text-white font-bold">%</span></div>
             </div>
-            <div className="text-right">
-              <span className="text-[10px] uppercase font-bold block opacity-75">Teto 23%</span>
-              <span className="text-xs font-black text-white">{formatBRL(tetoPermitido)}</span>
+            <div><label className="block text-[10px] text-[#A3A3A3] font-bold uppercase mb-1">Prazo Encash</label>
+              <select value={qtdParcelasEncash} onChange={(e) => setQtdParcelasEncash(Math.min(72, Math.max(1, Number(e.target.value))))} className="w-full bg-[#111] border border-[#333] rounded-xl px-3 py-2 text-white font-bold outline-none focus:border-[#FF600B]">{Array.from({length:72},(_,i)=>i+1).map(n=><option key={n} value={n}>{n}x</option>)}</select>
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#111] rounded-xl p-3"><span className="text-[10px] text-[#A3A3A3] block">Total estimado Encash</span><strong className="text-white text-lg">{formatBRL(valorEncashEstimado)}</strong></div>
+            <div className="bg-[#111] rounded-xl p-3"><span className="text-[10px] text-[#A3A3A3] block">Parcela estimada ({qtdParcelasEncash}x)</span><strong className="text-white text-lg">{formatBRL(parcelaEncashEstimada)}</strong></div>
+          </div>
+          <p className="text-[10px] leading-relaxed text-[#A3A3A3]">Simulação estimada. A condição efetiva depende da análise e aprovação do CPF pela Encash.</p>
+          {saldoAposEncash < 0 && <p className="text-xs text-rose-300 font-bold">A estimativa Encash ultrapassa o saldo de entrada em {formatBRL(Math.abs(saldoAposEncash))}.</p>}
         </div>
-
         {/* 2. SELEÇÃO DE ESTRUTURA DO PARCELAMENTO */}
         <div className="bg-[#1A1A1A] p-1.5 rounded-2xl border border-[#2A2A2A] mb-5 grid grid-cols-2 gap-1">
           <button
@@ -351,7 +344,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
               const qP = qtdParcelasPosObra > 0 ? qtdParcelasPosObra : 44;
               setQtdParcelasObra(qO);
               setQtdParcelasPosObra(qP);
-              const restante = Math.max(0, saldoEntrada - totalSinal - totalIntermediarias);
+              const restante = Math.max(0, saldoDisponivelConstrutora - totalSinal - totalIntermediarias);
               const tot = qO + qP;
               if (tot > 0) {
                 const valParc = Math.floor((restante / tot) * 100) / 100;
@@ -380,7 +373,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
               setDisplayParcelaPosObra('');
               const qO = qtdParcelasObra > 0 ? qtdParcelasObra : 30;
               setQtdParcelasObra(qO);
-              const restante = Math.max(0, saldoEntrada - totalSinal - totalIntermediarias);
+              const restante = Math.max(0, saldoDisponivelConstrutora - totalSinal - totalIntermediarias);
               if (qO > 0) {
                 const valParc = Math.floor((restante / qO) * 100) / 100;
                 setValorParcelaObra(valParc);
@@ -414,9 +407,11 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
             {/* Breakdown lines */}
             <div className="space-y-2 text-xs">
               <div className="flex justify-between items-center text-[#A3A3A3]">
-                <span className="font-semibold">Saldo total a parcelar:</span>
-                <span className="font-black text-white">{formatBRL(saldoEntrada)}</span>
+                <span className="font-semibold">Saldo após Encash:</span>
+                <span className="font-black text-white">{formatBRL(saldoDisponivelConstrutora)}</span>
               </div>
+
+              <div className="flex justify-between items-center text-[#FF600B]"><span className="font-semibold">Encash estimada ({percentualEncashSeguro}% • {qtdParcelasEncash}x):</span><span className="font-bold">{formatBRL(valorEncashEstimado)} • {formatBRL(parcelaEncashEstimada)}/mês</span></div>
 
               {totalSinal > 0 && (
                 <div className="flex justify-between items-center text-[#FF600B]">
