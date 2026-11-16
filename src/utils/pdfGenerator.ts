@@ -64,7 +64,16 @@ export async function generateProposalPdf(params: GeneratePdfParams): Promise<vo
 
   const totalIntermediarias = intermediarias.reduce((sum, item) => sum + (item.valor || 0), 0);
   const valorEncashEstimado = Number((valorImovel * percentualEncash / 100).toFixed(2));
-  const parcelaEncashEstimada = qtdParcelasEncash > 0 ? Number((valorEncashEstimado / qtdParcelasEncash).toFixed(2)) : 0;
+  // Manter exatamente a mesma estimativa da tela: capitalização composta de 1,45% a.m. por 36 meses,
+  // dividindo o montante projetado pelo prazo Encash escolhido.
+  const taxaMensalEncash = 0.0145;
+  const mesesCapitalizacaoEncash = 36;
+  const montanteEncashProjetado = Number(
+    (valorEncashEstimado * Math.pow(1 + taxaMensalEncash, mesesCapitalizacaoEncash)).toFixed(2)
+  );
+  const parcelaEncashEstimada = qtdParcelasEncash > 0
+    ? Number((montanteEncashProjetado / qtdParcelasEncash).toFixed(2))
+    : 0;
 
   // Theme-specific colors
   const isLight = theme === 'light';
