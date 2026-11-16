@@ -119,16 +119,20 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   const totalSinal = sinalAVista || 0;
   const totalIntermediarias = (intermediarias || []).reduce((acc, item) => acc + (item.valor || 0), 0);
 
-  // Distribuição: sinal + 48 parcelas da construtora + intermediárias/balões.
-  const totalConstrutora = 48 * (valorParcelaObra || 0);
-  const totalDistribuido = totalSinal + totalConstrutora + totalIntermediarias;
+  // Regra INC: sinal e balões são opcionais. Todo o saldo que não for
+  // destinado a eles fica automaticamente com a construtora em 48 parcelas.
+  const totalConstrutora = Math.max(
+    0,
+    Number((saldoDisponivelConstrutora - totalSinal - totalIntermediarias).toFixed(2))
+  );
+  const valorParcelaObraCalculada = Number((totalConstrutora / 48).toFixed(2));
+  const totalDistribuido = totalSinal + totalIntermediarias + totalConstrutora;
   const saldoRestante = Number((saldoDisponivelConstrutora - totalDistribuido).toFixed(2));
 
-  // Sugere a parcela mensal dividindo o saldo restante em 48x.
   const distributeRemainingEqually = (customSinal?: number) => {
     const activeSinal = customSinal !== undefined ? customSinal : totalSinal;
     const restante = Math.max(0, saldoDisponivelConstrutora - activeSinal - totalIntermediarias);
-    const valParc = Math.floor((restante / 48) * 100) / 100;
+    const valParc = Number((restante / 48).toFixed(2));
     setQtdParcelasObra(48);
     setValorParcelaObra(valParc);
     setQtdParcelasPosObra(0);
@@ -143,10 +147,12 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
     }
   }, []);
 
-  // Sincroniza o campo de parcela da construtora.
+  // Mantém o estado compartilhado, o resumo e o PDF sincronizados
+  // com o saldo calculado automaticamente para a construtora.
   useEffect(() => {
-    setDisplayParcelaObra(valorParcelaObra > 0 ? formatBRL(valorParcelaObra) : '');
-  }, [valorParcelaObra]);
+    setValorParcelaObra(valorParcelaObraCalculada);
+    setDisplayParcelaObra(valorParcelaObraCalculada > 0 ? formatBRL(valorParcelaObraCalculada) : '');
+  }, [valorParcelaObraCalculada]);
 
   // Handlers para Intermediárias
   const handleAddIntermediaria = () => {
@@ -162,24 +168,14 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   };
 
   const handleSetPresetIntermediarias = (qtd: number) => {
-    // Ao escolher a quantidade de balões, distribui automaticamente o saldo
-    // que ainda não foi destinado ao sinal nem às 48 parcelas da construtora.
-    // Os valores continuam editáveis individualmente pelo corretor.
-    const saldoParaBaloes = Math.max(
-      0,
-      Number((saldoDisponivelConstrutora - totalSinal - (48 * (valorParcelaObra || 0))).toFixed(2))
-    );
-    const valorBase = Math.floor((saldoParaBaloes / qtd) * 100) / 100;
+    // Os balões são opcionais e não recebem valores automaticamente.
+    // O corretor informa cada valor; a construtora recebe o saldo restante.
     const items: IntermediariaItem[] = [];
-
     for (let i = 1; i <= qtd; i++) {
-      const valor = i === qtd
-        ? Number((saldoParaBaloes - (valorBase * (qtd - 1))).toFixed(2))
-        : valorBase;
       items.push({
         id: `interm_${Date.now()}_${i}`,
         numero: i,
-        valor,
+        valor: 0,
         mesOuPeriodo: `Mês ${i * 6}`,
       });
     }
@@ -224,13 +220,6 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
     setSinalAVista(val);
     setDisplaySinal(formatBRL(val));
     distributeRemainingEqually(val);
-  };
-
-  // Handlers para Obra
-  const handleParcelaObraChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const numeric = parseBRLInput(e.target.value);
-    setValorParcelaObra(numeric);
-    setDisplayParcelaObra(numeric > 0 ? formatBRL(numeric) : '');
   };
 
   // Handlers para Documentação
@@ -355,7 +344,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
                   <div className="flex items-center gap-2">
                     <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
                     <span className="text-xs font-black">
-                      Parcelas excedem o saldo em {formatBRL(Math.abs(saldoRestante))}
+                      Sinal e balões excedem o saldo em {formatBRL(Math.abs(saldoRestante))}
                     </span>
                   </div>
                   <button
@@ -547,12 +536,12 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-[#A3A3A3] uppercase mb-1">Valor de cada parcela</label>
-                <input type="text" inputMode="numeric" value={displayParcelaObra} onChange={handleParcelaObraChange}
-                  placeholder="R$ 0,00"
-                  className="w-full bg-[#111111] border border-[#2E2E2E] focus:border-[#FF600B] text-white font-black text-sm rounded-xl px-3 py-2 outline-none placeholder:text-[#52525B]" />
+                <div className="w-full bg-[#111111] border border-[#2E2E2E] text-white font-black text-sm rounded-xl px-3 py-2">
+                  {formatBRL(valorParcelaObraCalculada)}
+                </div>
               </div>
             </div>
-            <p className="text-[10px] text-[#A3A3A3]">Informe manualmente o valor mensal da construtora. O total será calculado em 48 parcelas.</p>
+            <p className="text-[10px] text-[#A3A3A3]">Valor calculado automaticamente: saldo restante após sinal e balões, dividido em 48 parcelas.</p>
           </div>
 
           {/* 7. DOCUMENTAÇÃO (ITBI + REGISTRO) */}
