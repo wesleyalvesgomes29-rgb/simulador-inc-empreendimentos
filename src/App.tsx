@@ -75,19 +75,17 @@ export default function App() {
 
   // Property Details (INC Empreendimentos default)
   const defaultEmp = INC_EMPREENDIMENTOS[0] || EMPREENDIMENTO_PADRAO_INC;
-  const defaultTipo = defaultEmp.tipologias[0];
 
   const [propertyDetails, setPropertyDetails] = useState<PropertyDetails>({
     empreendimentoId: defaultEmp.id,
     nomeImovel: defaultEmp.nome,
     construtora: 'INC Empreendimentos',
     localizacao: `${defaultEmp.bairro}, ${defaultEmp.cidade} - ${defaultEmp.estado}`,
-    unidade: 'Apto 204 - Bloco 02',
-    tipologia: `${defaultTipo.nome} (${defaultTipo.areaM2} m²)`,
-    areaM2: defaultTipo.areaM2,
-    valorImovel: defaultTipo.valorPadrao,
+    unidade: '',
+    tipologia: '',
+    valorImovel: 0,
   });
-  const [valorImovel, setValorImovel] = useState<number>(defaultTipo.valorPadrao);
+  const [valorImovel, setValorImovel] = useState<number>(0);
 
   // CAIXA, Subsídio & FGTS Values
   const [financiamentoCaixa, setFinanciamentoCaixa] = useState<number>(184000);
