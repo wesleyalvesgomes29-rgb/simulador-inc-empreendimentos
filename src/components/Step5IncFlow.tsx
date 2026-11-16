@@ -98,7 +98,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   onNext,
   onBack,
 }) => {
-  // O fluxo atual utiliza somente 48 parcelas com a construtora.
+  // Quantidade de parcelas da construtora editável pelo consultor.
   // String state for inputs
   const [displaySinal, setDisplaySinal] = useState<string>(
     sinalAVista > 0 ? formatBRL(sinalAVista) : ''
@@ -154,7 +154,8 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
     0,
     Number((saldoDisponivelConstrutora - totalSinal - totalIntermediarias).toFixed(2))
   );
-  const valorParcelaObraCalculada = Number((totalConstrutora / 48).toFixed(2));
+  const quantidadeParcelasConstrutora = Math.max(1, Math.floor(Number(qtdParcelasObra) || 48));
+  const valorParcelaObraCalculada = Number((totalConstrutora / quantidadeParcelasConstrutora).toFixed(2));
   const totalConstrutoraCorrigido = totalConstrutora;
   const totalDistribuido = totalSinal + totalIntermediarias + totalConstrutora;
   const saldoRestante = Number((saldoDisponivelConstrutora - totalDistribuido).toFixed(2));
@@ -162,8 +163,9 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   const distributeRemainingEqually = (customSinal?: number) => {
     const activeSinal = customSinal !== undefined ? customSinal : totalSinal;
     const restante = Math.max(0, saldoDisponivelConstrutora - activeSinal - totalIntermediarias);
-    const valParc = Number((restante / 48).toFixed(2));
-    setQtdParcelasObra(48);
+    const quantidade = Math.max(1, Math.floor(Number(qtdParcelasObra) || 48));
+    const valParc = Number((restante / quantidade).toFixed(2));
+    setQtdParcelasObra(quantidade);
     setValorParcelaObra(valParc);
     setQtdParcelasPosObra(0);
     setValorParcelaPosObra(0);
@@ -355,7 +357,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
 
               {totalConstrutora > 0 && (
                 <div className="flex justify-between items-center text-[#FF7A00]">
-                  <span className="font-semibold">(-) Construtora (48x de {formatBRL(valorParcelaObraCalculada)}):</span>
+                  <span className="font-semibold">(-) Construtora ({quantidadeParcelasConstrutora}x de {formatBRL(valorParcelaObraCalculada)}):</span>
                   <span className="font-bold">{formatBRL(totalConstrutoraCorrigido)}</span>
                 </div>
               )}
@@ -550,19 +552,51 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
             )}
           </div>
 
-          {/* 6. PARCELAMENTO COM A CONSTRUTORA - 48X */}
+          {/* 6. PARCELAMENTO COM A CONSTRUTORA */}
           <div className="bg-[#1A1A1A] p-4.5 rounded-2xl border border-[#2A2A2A] space-y-3.5">
             <div className="flex items-center justify-between border-b border-[#2A2A2A] pb-2">
               <span className="text-xs font-black text-[#FF600B] uppercase tracking-wider flex items-center gap-1.5">
                 <Building2 className="w-4 h-4 text-[#FF600B]" />
-                CONSTRUTORA (48X)
+                CONSTRUTORA ({quantidadeParcelasConstrutora}X)
               </span>
               <span className="text-xs font-bold text-[#A3A3A3]">Total: {formatBRL(totalConstrutora)}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-[#A3A3A3] uppercase mb-1">Quantidade de parcelas</label>
-                <div className="bg-[#111111] border border-[#2E2E2E] px-3 py-2 rounded-xl text-white font-black text-sm">48x fixas</div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQtdParcelasObra(Math.max(1, quantidadeParcelasConstrutora - 1))}
+                    aria-label="Diminuir quantidade de parcelas"
+                    className="w-10 h-10 rounded-xl border border-[#2E2E2E] bg-[#111111] text-white font-black text-lg hover:border-[#FF600B] cursor-pointer"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    inputMode="numeric"
+                    value={quantidadeParcelasConstrutora}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '') return;
+                      const parsed = Math.max(1, Math.floor(Number(value)));
+                      if (Number.isFinite(parsed)) setQtdParcelasObra(parsed);
+                    }}
+                    aria-label="Quantidade de parcelas da construtora"
+                    className="min-w-0 w-full bg-[#111111] border border-[#2E2E2E] focus:border-[#FF600B] text-white font-black text-sm text-center rounded-xl px-2 py-2 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setQtdParcelasObra(quantidadeParcelasConstrutora + 1)}
+                    aria-label="Aumentar quantidade de parcelas"
+                    className="w-10 h-10 rounded-xl border border-[#2E2E2E] bg-[#111111] text-white font-black text-lg hover:border-[#FF600B] cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-[#A3A3A3] uppercase mb-1">Valor de cada parcela</label>
@@ -571,7 +605,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
                 </div>
               </div>
             </div>
-            <p className="text-[10px] text-[#A3A3A3]">Saldo restante após sinal e intermediárias, dividido em 48 parcelas fixas, sem juros ou correção.</p>
+            <p className="text-[10px] text-[#A3A3A3]">Saldo restante após sinal e intermediárias, dividido na quantidade de parcelas escolhida, sem juros ou correção.</p>
           </div>
 
           {/* 7. DOCUMENTAÇÃO (ITBI + REGISTRO) */}
