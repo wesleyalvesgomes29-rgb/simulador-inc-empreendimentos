@@ -487,23 +487,9 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
               />
             </div>
 
-            {/* Quick Presets for Sinal & Botão de Atalho Sinal Mínimo INC (Regra 23%) */}
+            {/* Atalhos de valores para sinal inicial */}
             <div className="space-y-2">
-              {diferencaEntradaMinima > 0 && (
-                <button
-                  type="button"
-                  onClick={() => handleSelectSinalMinimo(diferencaEntradaMinima)}
-                  className={`w-full py-2.5 px-3 rounded-xl font-black text-xs border transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                    Math.abs(sinalAVista - diferencaEntradaMinima) < 0.01
-                      ? 'bg-[#FF600B] text-white border-[#FF600B] shadow-lg shadow-[#FF600B]/30'
-                      : 'bg-[#FF600B]/15 text-[#FF600B] border-[#FF600B]/50 hover:bg-[#FF600B]/25 hover:text-white'
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4 text-inherit flex-shrink-0" />
-                  <span>Sinal Mínimo INC ({formatBRL(diferencaEntradaMinima)})</span>
-                </button>
-              )}
-
+  
               <div className="grid grid-cols-4 gap-1.5">
                 {[0, 3000, 5000, 10000].map((preset) => (
                   <button
