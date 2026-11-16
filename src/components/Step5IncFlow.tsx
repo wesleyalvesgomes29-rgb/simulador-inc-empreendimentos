@@ -189,7 +189,8 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   // Handlers para Intermediárias
   const handleAddIntermediaria = () => {
     const nextNum = (intermediarias || []).length + 1;
-    const defaultPeriodo = `Mês ${nextNum * 6}`;
+    const primeiroAno = new Date().getFullYear() + 1;
+    const defaultPeriodo = `Dez/${primeiroAno + nextNum - 1}`;
     const newItem: IntermediariaItem = {
       id: `interm_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       numero: nextNum,
@@ -200,15 +201,16 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   };
 
   const handleSetPresetIntermediarias = (qtd: number) => {
-    // Os balões são opcionais e não recebem valores automaticamente.
-    // O corretor informa cada valor; a construtora recebe o saldo restante.
+    // Atalho para balões anuais em dezembro: Dez/2027, Dez/2028 e assim por diante.
+    // Os valores continuam zerados para o corretor preencher manualmente.
+    const primeiroAno = new Date().getFullYear() + 1;
     const items: IntermediariaItem[] = [];
     for (let i = 1; i <= qtd; i++) {
       items.push({
         id: `interm_${Date.now()}_${i}`,
         numero: i,
         valor: 0,
-        mesOuPeriodo: `Mês ${i * 6}`,
+        mesOuPeriodo: `Dez/${primeiroAno + i - 1}`,
       });
     }
     setIntermediarias(items);
@@ -443,7 +445,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
                   INTERMEDIÁRIAS / BALÕES (INC)
                 </span>
                 <span className="text-[11px] text-[#A3A3A3] font-medium block mt-0.5">
-                  Parcelas anuais, semestrais ou balões intercalados
+                  Balões anuais em dezembro (Dez/2027, Dez/2028...)
                 </span>
               </div>
               <div className="text-right">
@@ -492,7 +494,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
             {/* Intermediárias list */}
             {(!intermediarias || intermediarias.length === 0) ? (
               <div className="text-center py-4 px-3 bg-[#111111] rounded-xl border border-dashed border-[#2A2A2A] text-xs text-[#71717A]">
-                Nenhuma intermediária cadastrada. Clique em <strong className="text-[#A3A3A3]">Adicionar Intermediária</strong> caso queira incluir balões semestrais ou anuais.
+                Nenhuma intermediária cadastrada. Clique em <strong className="text-[#A3A3A3]">Adicionar Intermediária</strong> caso queira incluir balões anuais.
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -541,7 +543,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
                           type="text"
                           value={item.mesOuPeriodo}
                           onChange={(e) => handleIntermediariaPeriodoChange(item.id, e.target.value)}
-                          placeholder="Ex: Mês 12, Dez/2026, Semestral"
+                          placeholder="Ex: Dez/2027, Dez/2028"
                           className="w-full bg-[#161616] border border-[#2E2E2E] focus:border-[#FF600B] text-white font-semibold text-xs rounded-xl px-3 py-2 outline-none placeholder:text-[#52525B]"
                         />
                       </div>
