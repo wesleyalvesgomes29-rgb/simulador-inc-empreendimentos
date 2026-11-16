@@ -144,7 +144,7 @@ export async function generateProposalPdf(params: GeneratePdfParams): Promise<vo
         <h3 style="font-size: 11px; font-weight: 800; color: #FF600B; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 10px 0;">EMPREENDIMENTO INC</h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
           <div style="color: ${textMuted};"><strong style="color: ${textColor};">Empreendimento:</strong> ${imovelInfo.nomeImovel} - INC Empreendimentos</div>
-          <div style="color: ${textMuted};"><strong style="color: ${textColor};">Tipologia:</strong> ${imovelInfo.tipologia}</div>
+          ${imovelInfo.tipologia ? `<div style="color: ${textMuted};"><strong style="color: ${textColor};">Tipologia:</strong> ${imovelInfo.tipologia}</div>` : ''}
           ${imovelInfo.unidade ? `<div style="color: ${textMuted};"><strong style="color: ${textColor};">Unidade:</strong> ${imovelInfo.unidade}</div>` : ''}
           <div style="color: ${textMuted};"><strong style="color: ${textColor};">Localização:</strong> ${imovelInfo.localizacao || 'Uberlândia - MG'}</div>
           <div style="grid-column: span 2; background-color: ${innerBoxBg}; border: 1px solid ${borderColor}; padding: 12px 16px; border-radius: 10px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center;">
