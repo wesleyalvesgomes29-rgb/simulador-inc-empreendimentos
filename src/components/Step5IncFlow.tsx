@@ -162,12 +162,24 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   };
 
   const handleSetPresetIntermediarias = (qtd: number) => {
+    // Ao escolher a quantidade de balões, distribui automaticamente o saldo
+    // que ainda não foi destinado ao sinal nem às 48 parcelas da construtora.
+    // Os valores continuam editáveis individualmente pelo corretor.
+    const saldoParaBaloes = Math.max(
+      0,
+      Number((saldoDisponivelConstrutora - totalSinal - (48 * (valorParcelaObra || 0))).toFixed(2))
+    );
+    const valorBase = Math.floor((saldoParaBaloes / qtd) * 100) / 100;
     const items: IntermediariaItem[] = [];
+
     for (let i = 1; i <= qtd; i++) {
+      const valor = i === qtd
+        ? Number((saldoParaBaloes - (valorBase * (qtd - 1))).toFixed(2))
+        : valorBase;
       items.push({
         id: `interm_${Date.now()}_${i}`,
         numero: i,
-        valor: 0,
+        valor,
         mesOuPeriodo: `Mês ${i * 6}`,
       });
     }
@@ -326,6 +338,12 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
                 <div className="flex justify-between items-center text-[#FF7A00]">
                   <span className="font-semibold">(-) Construtora (48x de {formatBRL(valorParcelaObra)}):</span>
                   <span className="font-bold">{formatBRL(totalConstrutora)}</span>
+                </div>
+              )}
+              {saldoRestante > 0.009 && (
+                <div className="flex justify-between items-center text-amber-600 border-t border-dashed border-[#D7DEE8] pt-2">
+                  <span className="font-semibold">Saldo ainda não distribuído:</span>
+                  <span className="font-black">{formatBRL(saldoRestante)}</span>
                 </div>
               )}
             </div>
