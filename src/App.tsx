@@ -28,34 +28,15 @@ import { ClientsModal } from './components/ClientsModal';
 import { saveClientLead, ClientLead } from './utils/clientStorage';
 
 export default function App() {
-  // Theme Mode (dark / light)
-  const [theme, setTheme] = useState<ThemeMode>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('inc_theme_mode');
-      if (saved === 'dark' || saved === 'light') return saved;
-    }
-    return 'dark';
-  });
-
+  // Tema único do simulador INC: sempre modo dia.
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    if (theme === 'light') {
-      document.documentElement.classList.add('theme-light');
-      document.documentElement.classList.remove('theme-dark');
-      document.body.classList.add('theme-light');
-      document.body.classList.remove('theme-dark');
-    } else {
-      document.documentElement.classList.add('theme-dark');
-      document.documentElement.classList.remove('theme-light');
-      document.body.classList.add('theme-dark');
-      document.body.classList.remove('theme-light');
-    }
-    localStorage.setItem('inc_theme_mode', theme);
-  }, [theme]);
-
-  const handleToggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.classList.add('theme-light');
+    document.documentElement.classList.remove('theme-dark');
+    document.body.classList.add('theme-light');
+    document.body.classList.remove('theme-dark');
+    localStorage.setItem('inc_theme_mode', 'light');
+  }, []);
 
   // Navigation Step - Start directly on Screen 1 (Cliente)
   const [currentStep, setCurrentStep] = useState<AppStep>('dados_cliente');
@@ -249,8 +230,6 @@ export default function App() {
         onReset={handleReset}
         onOpenTableModal={() => setIsTableModalOpen(true)}
         onOpenClientsModal={() => setIsClientsModalOpen(true)}
-        theme={theme}
-        onToggleTheme={handleToggleTheme}
       />
 
       {/* Visual Step Progress Indicator */}
@@ -395,7 +374,7 @@ export default function App() {
               incluirDocumentacao={incluirDocumentacao}
               valorDocumentacao={valorDocumentacao}
               parcelasDocumentacao={parcelasDocumentacao}
-              theme={theme}
+              theme="light"
               onBack={() => setCurrentStep('fluxo_construtora')}
               onEditStep={(step) => {
                 setCurrentStep(step);
