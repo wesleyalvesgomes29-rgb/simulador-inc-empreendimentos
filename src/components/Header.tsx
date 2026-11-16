@@ -1,14 +1,12 @@
 import React from 'react';
-import { Building2, RotateCcw, Table, Users, Sun, Moon } from 'lucide-react';
-import { AppStep, ThemeMode } from '../types';
+import { RotateCcw, Table, Users } from 'lucide-react';
+import { AppStep } from '../types';
 
 interface HeaderProps {
   currentStep: AppStep;
   onReset: () => void;
   onOpenTableModal?: () => void;
   onOpenClientsModal: () => void;
-  theme?: ThemeMode;
-  onToggleTheme?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -16,8 +14,6 @@ export const Header: React.FC<HeaderProps> = ({
   onReset,
   onOpenTableModal,
   onOpenClientsModal,
-  theme = 'dark',
-  onToggleTheme,
 }) => {
   return (
     <header className="bg-[#111111] text-white border-b border-[#2A2A2A] sticky top-0 z-30 shadow-md">
@@ -63,28 +59,6 @@ export const Header: React.FC<HeaderProps> = ({
             <Users className="w-3.5 h-3.5 text-[#FF600B]" />
             <span>Atendimentos</span>
           </button>
-
-          {onToggleTheme && (
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              className="flex items-center gap-1.5 text-xs text-[#B5B5B5] hover:text-white bg-[#1A1A1A] hover:bg-[#262626] px-2.5 py-1.5 rounded-lg border border-[#2A2A2A] transition-colors cursor-pointer"
-              title={theme === 'dark' ? 'Mudar para Modo Dia (Claro)' : 'Mudar para Modo Noite (Escuro)'}
-              aria-label="Alternar Tema"
-            >
-              {theme === 'dark' ? (
-                <>
-                  <Sun className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="hidden sm:inline">Dia</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-3.5 h-3.5 text-[#FF600B]" />
-                  <span className="hidden sm:inline">Noite</span>
-                </>
-              )}
-            </button>
-          )}
 
           <button
             type="button"
