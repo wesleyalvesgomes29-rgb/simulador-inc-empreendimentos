@@ -292,24 +292,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
               <strong className="text-lg font-black block mt-1" style={{ color: '#FFFFFF' }}>{formatBRL(parcelaEncashEstimada)}</strong>
             </div>
           </div>
-          <div className="rounded-xl border border-[#3A3A3A] bg-[#111111] p-3 space-y-1.5">
-            <div className="flex justify-between gap-3 text-[11px]">
-              <span className="text-[#A3A3A3]">Taxa média de referência</span>
-              <strong className="text-white">1,45% ao mês</strong>
-            </div>
-            <div className="flex justify-between gap-3 text-[11px]">
-              <span className="text-[#A3A3A3]">Período de capitalização composta</span>
-              <strong className="text-white">36 meses</strong>
-            </div>
-            <div className="flex justify-between gap-3 text-[11px]">
-              <span className="text-[#A3A3A3]">Montante projetado após 36 meses</span>
-              <strong className="text-white">{formatBRL(totalEncashProjetado)}</strong>
-            </div>
-            <p className="text-[10px] text-[#A3A3A3] pt-1">
-              O valor liberado é capitalizado a 1,45% a.m. por 36 meses, com juros compostos. O montante projetado é dividido em {qtdParcelasEncash} parcelas fixas.
-            </p>
-          </div>
-          <p className="text-[10px] leading-relaxed text-[#A3A3A3]">Projeção matemática estimada, não representa a fórmula oficial da Encash. A condição efetiva depende da análise e aprovação do CPF pela Encash.</p>
+
           {saldoAposEncash < 0 && <p className="text-xs text-rose-300 font-bold">A estimativa Encash ultrapassa o saldo de entrada em {formatBRL(Math.abs(saldoAposEncash))}.</p>}
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
