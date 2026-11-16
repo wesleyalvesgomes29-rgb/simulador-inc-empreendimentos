@@ -110,10 +110,73 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
     valorDocumentacao > 0 ? formatBRL(valorDocumentacao) : ''
   );
 
-  // Encash: estimativa comercial calculada sobre o valor de venda do imóvel.
+  // IPCA oficial: média aritmética das últimas 12 variações mensais publicadas pelo IBGE/SIDRA.
+  const [ipcaMediaMensal, setIpcaMediaMensal] = useState<number>(0);
+  const [ipcaStatus, setIpcaStatus] = useState<'loading' | 'live' | 'cached' | 'error'>('loading');
+  const [ipcaPeriodo, setIpcaPeriodo] = useState<string>('');
+
+  useEffect(() => {
+    let ativo = true;
+    const carregarIpca = async () => {
+      try {
+        const response = await fetch('https://apisidra.ibge.gov.br/values/t/1737/n1/1/v/63/p/last%2012', {
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) throw new Error(`IBGE HTTP ${response.status}`);
+        const rows: Array<Record<string, string>> = await response.json();
+        const valores = rows.slice(1)
+          .map((row) => Number(String(row.V ?? '').replace(',', '.')))
+          .filter((value) => Number.isFinite(value));
+        if (valores.length !== 12) throw new Error('O IBGE não retornou exatamente 12 variações mensais.');
+        const media = valores.reduce((sum, value) => sum + value, 0) / valores.length;
+        const periodo = rows[rows.length - 1]?.D3N || rows[rows.length - 1]?.D3C || '';
+        if (!ativo) return;
+        setIpcaMediaMensal(media);
+        setIpcaPeriodo(periodo);
+        setIpcaStatus('live');
+        try {
+          localStorage.setItem('inc_ipca_media_12m', JSON.stringify({ media, periodo, atualizadoEm: new Date().toISOString() }));
+        } catch { /* armazenamento local opcional */ }
+      } catch (error) {
+        try {
+          const cached = localStorage.getItem('inc_ipca_media_12m');
+          if (cached) {
+            const parsed = JSON.parse(cached) as { media?: number; periodo?: string };
+            if (Number.isFinite(parsed.media)) {
+              if (ativo) {
+                setIpcaMediaMensal(Number(parsed.media));
+                setIpcaPeriodo(parsed.periodo || '');
+                setIpcaStatus('cached');
+              }
+              return;
+            }
+          }
+        } catch { /* cache inválido: informar indisponibilidade */ }
+        if (ativo) setIpcaStatus('error');
+      }
+    };
+    carregarIpca();
+    return () => { ativo = false; };
+  }, []);
+
+  // Encash: percentual manual sobre o valor de venda. Os primeiros 36 meses
+  // amortizam sem juros; a partir do 37º, o saldo remanescente recebe IPCA
+  // médio mensal + 0,99% a.m., com capitalização composta.
   const percentualEncashSeguro = Math.min(22, Math.max(12, Number(percentualEncash) || 22));
   const valorEncashEstimado = Number((valorImovel * percentualEncashSeguro / 100).toFixed(2));
-  const parcelaEncashEstimada = qtdParcelasEncash > 0 ? Number((valorEncashEstimado / qtdParcelasEncash).toFixed(2)) : 0;
+  const taxaIpcaDecimal = ipcaMediaMensal / 100;
+  const taxaEncashMensal = (1 + taxaIpcaDecimal) * (1 + 0.0099) - 1;
+  const mesesSemCorrecao = Math.min(36, Math.max(0, qtdParcelasEncash));
+  const mesesComCorrecao = Math.max(0, qtdParcelasEncash - 36);
+  const fatorAnuidadeComCorrecao = mesesComCorrecao > 0
+    ? (taxaEncashMensal === 0
+      ? mesesComCorrecao
+      : (1 - Math.pow(1 + taxaEncashMensal, -mesesComCorrecao)) / taxaEncashMensal)
+    : 0;
+  const parcelaEncashEstimada = qtdParcelasEncash > 0
+    ? Number((valorEncashEstimado / (mesesSemCorrecao + fatorAnuidadeComCorrecao)).toFixed(2))
+    : 0;
+  const totalEncashProjetado = Number((parcelaEncashEstimada * qtdParcelasEncash).toFixed(2));
   const saldoAposEncash = Number((saldoEntrada - valorEncashEstimado).toFixed(2));
   const saldoDisponivelConstrutora = Math.max(0, saldoAposEncash);
   const totalSinal = sinalAVista || 0;
@@ -276,7 +339,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl p-3 border border-[#3A3A3A]" style={{ backgroundColor: '#111111' }}>
-              <span className="text-[10px] block" style={{ color: '#A3A3A3' }}>Total estimado Encash</span>
+              <span className="text-[10px] block" style={{ color: '#A3A3A3' }}>Valor liberado estimado</span>
               <strong className="text-lg font-black block mt-1" style={{ color: '#FFFFFF' }}>{formatBRL(valorEncashEstimado)}</strong>
             </div>
             <div className="rounded-xl p-3 border border-[#3A3A3A]" style={{ backgroundColor: '#111111' }}>
@@ -284,7 +347,29 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
               <strong className="text-lg font-black block mt-1" style={{ color: '#FFFFFF' }}>{formatBRL(parcelaEncashEstimada)}</strong>
             </div>
           </div>
-          <p className="text-[10px] leading-relaxed text-[#A3A3A3]">Simulação estimada. A condição efetiva depende da análise e aprovação do CPF pela Encash.</p>
+          <div className="rounded-xl border border-[#3A3A3A] bg-[#111111] p-3 space-y-1.5">
+            <div className="flex justify-between gap-3 text-[11px]">
+              <span className="text-[#A3A3A3]">IPCA médio mensal (últimos 12 meses)</span>
+              <strong className="text-white">{ipcaStatus === 'loading' ? 'Consultando IBGE…' : ipcaStatus === 'error' ? 'Indisponível' : `${ipcaMediaMensal.toFixed(4).replace('.', ',')}% a.m.`}</strong>
+            </div>
+            <div className="flex justify-between gap-3 text-[11px]">
+              <span className="text-[#A3A3A3]">Taxa combinada estimada</span>
+              <strong className="text-white">{(taxaEncashMensal * 100).toFixed(4).replace('.', ',')}% a.m.</strong>
+            </div>
+            <div className="flex justify-between gap-3 text-[11px]">
+              <span className="text-[#A3A3A3]">Total projetado das {qtdParcelasEncash} parcelas</span>
+              <strong className="text-white">{formatBRL(totalEncashProjetado)}</strong>
+            </div>
+            <p className="text-[10px] text-[#A3A3A3] pt-1">
+              {qtdParcelasEncash <= 36
+                ? `Prazo de ${qtdParcelasEncash} meses: sem correção, conforme a regra dos primeiros 36 meses.`
+                : `1ª à 36ª: sem correção. 37ª à ${qtdParcelasEncash}ª: IPCA médio + 0,99% a.m. sobre o saldo devedor.`}
+              {ipcaPeriodo ? ` Último período IBGE: ${ipcaPeriodo}.` : ''}
+            </p>
+            {ipcaStatus === 'cached' && <p className="text-[10px] text-amber-300">Usando a última média salva porque o IBGE não respondeu nesta consulta.</p>}
+            {ipcaStatus === 'error' && <p className="text-[10px] text-amber-300">Não foi possível consultar o IPCA no IBGE e não há média salva. A parcela está provisoriamente calculada apenas com 0,99% a.m.; confira antes de apresentar.</p>}
+          </div>
+          <p className="text-[10px] leading-relaxed text-[#A3A3A3]">Projeção matemática estimada, não representa a fórmula oficial da Encash. A condição efetiva depende da análise e aprovação do CPF pela Encash.</p>
           {saldoAposEncash < 0 && <p className="text-xs text-rose-300 font-bold">A estimativa Encash ultrapassa o saldo de entrada em {formatBRL(Math.abs(saldoAposEncash))}.</p>}
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
