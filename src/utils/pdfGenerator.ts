@@ -14,6 +14,8 @@ interface GeneratePdfParams {
   subsidioCaixa: number;
   fgts: number;
   sinalAVista: number;
+  percentualEncash: number;
+  qtdParcelasEncash: number;
   valorEntradaTotal: number;
   percentualProSoluto: number;
   qtdParcelasObra: number;
@@ -42,6 +44,8 @@ export async function generateProposalPdf(params: GeneratePdfParams): Promise<vo
     subsidioCaixa,
     fgts,
     sinalAVista,
+    percentualEncash,
+    qtdParcelasEncash,
     valorEntradaTotal,
     percentualProSoluto,
     qtdParcelasObra,
@@ -59,6 +63,8 @@ export async function generateProposalPdf(params: GeneratePdfParams): Promise<vo
   } = params;
 
   const totalIntermediarias = intermediarias.reduce((sum, item) => sum + (item.valor || 0), 0);
+  const valorEncashEstimado = Number((valorImovel * percentualEncash / 100).toFixed(2));
+  const parcelaEncashEstimada = qtdParcelasEncash > 0 ? Number((valorEncashEstimado / qtdParcelasEncash).toFixed(2)) : 0;
 
   // Theme-specific colors
   const isLight = theme === 'light';
@@ -171,6 +177,12 @@ export async function generateProposalPdf(params: GeneratePdfParams): Promise<vo
           <span>ENTRADA TOTAL / PRÓ-SOLUTO INC:</span>
           <span>${formatBRL(valorEntradaTotal)} (${percentualProSoluto.toFixed(1)}% do imóvel)</span>
         </div>
+      </div>
+
+      <div style="background-color: ${subCardBg}; border: 1px solid ${borderColor}; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;">
+        <h3 style="font-size: 11px; font-weight: 800; color: #FF600B; text-transform: uppercase; margin: 0 0 8px 0;">ENCASH • ESTIMATIVA COMERCIAL</h3>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:${textMuted};"><span>${percentualEncash}% do valor de venda • ${qtdParcelasEncash} parcelas</span><strong style="color:${textColor};">${formatBRL(valorEncashEstimado)} (${formatBRL(parcelaEncashEstimada)}/mês)</strong></div>
+        <p style="font-size:10px;color:${textSubtle};margin:7px 0 0 0;">Estimativa comercial sujeita à análise e aprovação do CPF pela Encash. Valores oficiais serão confirmados após aprovação.</p>
       </div>
 
       <!-- Construction / Developer Entry Flow Breakdown -->

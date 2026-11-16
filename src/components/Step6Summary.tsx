@@ -35,6 +35,8 @@ interface Step6SummaryProps {
   subsidioCaixa: number;
   fgts: number;
   sinalAVista: number;
+  percentualEncash: number;
+  qtdParcelasEncash: number;
   qtdParcelasObra: number;
   valorParcelaObra?: number;
   qtdParcelasPosObra: number;
@@ -63,6 +65,8 @@ export const Step6Summary: React.FC<Step6SummaryProps> = ({
   subsidioCaixa,
   fgts,
   sinalAVista,
+  percentualEncash,
+  qtdParcelasEncash,
   qtdParcelasObra,
   valorParcelaObra = 0,
   qtdParcelasPosObra,
@@ -86,7 +90,8 @@ export const Step6Summary: React.FC<Step6SummaryProps> = ({
   // Total Entrada / Pró-Soluto calculation
   const valorEntradaTotal = Math.max(0, valorImovel - financiamentoCaixa - subsidioCaixa - fgts);
   const percentualProSoluto = valorImovel > 0 ? (valorEntradaTotal / valorImovel) * 100 : 0;
-  const dentroLimite23 = percentualProSoluto <= 23.01;
+  const valorEncashEstimado = Number((valorImovel * percentualEncash / 100).toFixed(2));
+  const parcelaEncashEstimada = qtdParcelasEncash > 0 ? Number((valorEncashEstimado / qtdParcelasEncash).toFixed(2)) : 0;
 
   const totalIntermediarias = (intermediarias || []).reduce((acc, it) => acc + (it.valor || 0), 0);
 
@@ -195,6 +200,8 @@ export const Step6Summary: React.FC<Step6SummaryProps> = ({
         subsidioCaixa,
         fgts,
         sinalAVista,
+        percentualEncash,
+        qtdParcelasEncash,
         valorEntradaTotal,
         percentualProSoluto,
         intermediarias: intermediarias.length > 0 ? intermediarias : undefined,
@@ -372,7 +379,7 @@ export const Step6Summary: React.FC<Step6SummaryProps> = ({
                 FLUXO DE ENTRADA PRÓ-SOLUTO INC
               </span>
               <span className="text-[10px] text-[#A3A3A3] font-bold">
-                {percentualProSoluto.toFixed(1)}% do imóvel {dentroLimite23 ? '• Conforme regra 23%' : '• Acima de 23%'}
+                Entrada calculada: {percentualProSoluto.toFixed(1)}% do imóvel
               </span>
             </div>
             <button
@@ -391,6 +398,7 @@ export const Step6Summary: React.FC<Step6SummaryProps> = ({
               <span className="text-[#FF600B] font-black text-sm">{formatBRL(valorEntradaTotal)}</span>
             </div>
 
+            <div className="flex justify-between text-[#FF600B] font-bold"><span>Encash estimada ({percentualEncash}% • {qtdParcelasEncash}x):</span><span>{formatBRL(valorEncashEstimado)} ({formatBRL(parcelaEncashEstimada)}/mês)</span></div>
             {sinalAVista > 0 && (
               <div className="flex justify-between text-[#A3A3A3] bg-[#111111] p-2 rounded-lg border border-[#2A2A2A]">
                 <span>Sinal / Ato Inicial:</span>
