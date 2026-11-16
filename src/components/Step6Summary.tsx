@@ -423,17 +423,10 @@ export const Step6Summary: React.FC<Step6SummaryProps> = ({
               </div>
             )}
 
-            {qtdParcelasObra > 0 && valorParcelaObra > 0 && (
+            {valorParcelaObra > 0 && (
               <div className="flex justify-between text-[#A3A3A3] bg-[#111111] p-2 rounded-lg border border-[#2A2A2A]">
-                <span>Durante a Obra ({qtdParcelasObra}x):</span>
-                <strong className="text-[#FF600B]">{formatBRL(valorParcelaObra)} ({correcaoObra || 'INCC'})</strong>
-              </div>
-            )}
-
-            {qtdParcelasPosObra > 0 && valorParcelaPosObra > 0 && (
-              <div className="flex justify-between text-[#A3A3A3] bg-[#111111] p-2 rounded-lg border border-[#2A2A2A]">
-                <span>Pós-Chaves / Pós-Obra ({qtdParcelasPosObra}x):</span>
-                <strong className="text-[#FF7A00]">{formatBRL(valorParcelaPosObra)} ({correcaoPosObra || 'IPCA + 1,99% a.a.'})</strong>
+                <span>Construtora (48x):</span>
+                <strong className="text-[#FF600B]">{formatBRL(valorParcelaObra)} por mês • Total {formatBRL(valorParcelaObra * 48)}</strong>
               </div>
             )}
 

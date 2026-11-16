@@ -107,13 +107,7 @@ export function buildWhatsAppText(data: WhatsAppMessageData): string {
   }
 
   if (data.parcelaObra && data.parcelaObra.qtd > 0 && data.parcelaObra.valor > 0) {
-    const corrObra = data.parcelaObra.correcao ? ` (${data.parcelaObra.correcao})` : ' (INCC)';
-    message += `• *Durante a Obra:* ${data.parcelaObra.qtd}x de ${formatBRL(data.parcelaObra.valor)}${corrObra}\n`;
-  }
-
-  if (data.parcelaPosObra && data.parcelaPosObra.qtd > 0 && data.parcelaPosObra.valor > 0) {
-    const corrPos = data.parcelaPosObra.correcao ? ` (${data.parcelaPosObra.correcao})` : ' (IPCA + 1,99% a.a.)';
-    message += `• *Pós-Chaves / Pós-Obra:* ${data.parcelaPosObra.qtd}x de ${formatBRL(data.parcelaPosObra.valor)}${corrPos}\n`;
+    message += `• *Construtora:* 48x de ${formatBRL(data.parcelaObra.valor)} (Total: ${formatBRL(data.parcelaObra.valor * 48)})\n`;
   }
 
   if (data.intermediarias && data.intermediarias.length > 0) {

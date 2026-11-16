@@ -98,20 +98,13 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   onNext,
   onBack,
 }) => {
-  // Structure type: 'planta' (obra + pos-obra = 74x) or 'direto' (fluxo unico de obra)
-  const [tipoEstrutura, setTipoEstrutura] = useState<'planta' | 'direto'>(
-    qtdParcelasPosObra > 0 ? 'planta' : 'direto'
-  );
-
+  // O fluxo atual utiliza somente 48 parcelas com a construtora.
   // String state for inputs
   const [displaySinal, setDisplaySinal] = useState<string>(
     sinalAVista > 0 ? formatBRL(sinalAVista) : ''
   );
   const [displayParcelaObra, setDisplayParcelaObra] = useState<string>(
     valorParcelaObra > 0 ? formatBRL(valorParcelaObra) : ''
-  );
-  const [displayParcelaPosObra, setDisplayParcelaPosObra] = useState<string>(
-    valorParcelaPosObra > 0 ? formatBRL(valorParcelaPosObra) : ''
   );
   const [displayDoc, setDisplayDoc] = useState<string>(
     valorDocumentacao > 0 ? formatBRL(valorDocumentacao) : ''
@@ -126,53 +119,21 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   const totalSinal = sinalAVista || 0;
   const totalIntermediarias = (intermediarias || []).reduce((acc, item) => acc + (item.valor || 0), 0);
 
-  // 2. ELIMINAÇÃO DE RESÍDUO DE CENTAVOS NAS PARCELAS
-  // Saldo restante que vai para as parcelas mensais de obra e pós-obra
-  const saldoParaParcelar = Math.max(0, saldoDisponivelConstrutora - totalSinal - totalIntermediarias);
-  const totalParcelasQtd = (qtdParcelasObra || 0) + (tipoEstrutura === 'planta' ? (qtdParcelasPosObra || 0) : 0);
-
-  // Totais calculados
-  const totalObraBase = (qtdParcelasObra || 0) * (valorParcelaObra || 0);
-  const totalPosObra = tipoEstrutura === 'planta' ? (qtdParcelasPosObra || 0) * (valorParcelaPosObra || 0) : 0;
-  const somaParcelasBase = totalObraBase + totalPosObra;
-
-  // Diferença de centavos (sobra) jogada automaticamente somada na primeira parcela da obra
-  const sobraCentavos = (saldoParaParcelar > 0 && somaParcelasBase > 0 && Math.abs(saldoParaParcelar - somaParcelasBase) < 2.00)
-    ? Number((saldoParaParcelar - somaParcelasBase).toFixed(2))
-    : 0;
-
-  // Primeira parcela da obra com os centavos excedentes somados
-  const primeiraParcelaObra = valorParcelaObra > 0 ? Number((valorParcelaObra + sobraCentavos).toFixed(2)) : 0;
-  const totalObra = totalObraBase + sobraCentavos;
-
-  const totalDistribuido = totalSinal + totalObra + totalPosObra + totalIntermediarias;
+  // Distribuição: sinal + 48 parcelas da construtora + intermediárias/balões.
+  const totalConstrutora = 48 * (valorParcelaObra || 0);
+  const totalDistribuido = totalSinal + totalConstrutora + totalIntermediarias;
   const saldoRestante = Number((saldoDisponivelConstrutora - totalDistribuido).toFixed(2));
 
-  // Função central para dividir o saldo entre as parcelas de obra e pós-obra
+  // Sugere a parcela mensal dividindo o saldo restante em 48x.
   const distributeRemainingEqually = (customSinal?: number) => {
     const activeSinal = customSinal !== undefined ? customSinal : totalSinal;
     const restante = Math.max(0, saldoDisponivelConstrutora - activeSinal - totalIntermediarias);
-
-    if (tipoEstrutura === 'planta') {
-      const tot = (qtdParcelasObra || 0) + (qtdParcelasPosObra || 0);
-      if (tot > 0) {
-        // Divide o valor truncando nos centavos para que a sobra seja somada na 1ª parcela da obra
-        const valParc = Math.floor((restante / tot) * 100) / 100;
-        setValorParcelaObra(valParc);
-        setValorParcelaPosObra(valParc);
-        setDisplayParcelaObra(formatBRL(valParc));
-        setDisplayParcelaPosObra(formatBRL(valParc));
-      }
-    } else {
-      const tot = qtdParcelasObra || 30;
-      if (tot > 0) {
-        const valParc = Math.floor((restante / tot) * 100) / 100;
-        setValorParcelaObra(valParc);
-        setValorParcelaPosObra(0);
-        setDisplayParcelaObra(formatBRL(valParc));
-        setDisplayParcelaPosObra('');
-      }
-    }
+    const valParc = Math.floor((restante / 48) * 100) / 100;
+    setQtdParcelasObra(48);
+    setValorParcelaObra(valParc);
+    setQtdParcelasPosObra(0);
+    setValorParcelaPosObra(0);
+    setDisplayParcelaObra(formatBRL(valParc));
   };
 
   // Inicializa o parcelamento se ainda não houver valores definidos
@@ -182,18 +143,10 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
     }
   }, []);
 
-  // Sincroniza inputs quando as props externas mudam
-  useEffect(() => {
-    setDisplaySinal(sinalAVista > 0 ? formatBRL(sinalAVista) : '');
-  }, [sinalAVista]);
-
+  // Sincroniza o campo de parcela da construtora.
   useEffect(() => {
     setDisplayParcelaObra(valorParcelaObra > 0 ? formatBRL(valorParcelaObra) : '');
   }, [valorParcelaObra]);
-
-  useEffect(() => {
-    setDisplayParcelaPosObra(valorParcelaPosObra > 0 ? formatBRL(valorParcelaPosObra) : '');
-  }, [valorParcelaPosObra]);
 
   // Handlers para Intermediárias
   const handleAddIntermediaria = () => {
@@ -268,13 +221,6 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
     setDisplayParcelaObra(numeric > 0 ? formatBRL(numeric) : '');
   };
 
-  // Handlers para Pós-Obra
-  const handleParcelaPosObraChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const numeric = parseBRLInput(e.target.value);
-    setValorParcelaPosObra(numeric);
-    setDisplayParcelaPosObra(numeric > 0 ? formatBRL(numeric) : '');
-  };
-
   // Handlers para Documentação
   const handleDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const numeric = parseBRLInput(e.target.value);
@@ -334,63 +280,6 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
           <p className="text-[10px] leading-relaxed text-[#A3A3A3]">Simulação estimada. A condição efetiva depende da análise e aprovação do CPF pela Encash.</p>
           {saldoAposEncash < 0 && <p className="text-xs text-rose-300 font-bold">A estimativa Encash ultrapassa o saldo de entrada em {formatBRL(Math.abs(saldoAposEncash))}.</p>}
         </div>
-        {/* 2. SELEÇÃO DE ESTRUTURA DO PARCELAMENTO */}
-        <div className="bg-[#1A1A1A] p-1.5 rounded-2xl border border-[#2A2A2A] mb-5 grid grid-cols-2 gap-1">
-          <button
-            type="button"
-            onClick={() => {
-              setTipoEstrutura('planta');
-              const qO = qtdParcelasObra > 0 ? qtdParcelasObra : 30;
-              const qP = qtdParcelasPosObra > 0 ? qtdParcelasPosObra : 44;
-              setQtdParcelasObra(qO);
-              setQtdParcelasPosObra(qP);
-              const restante = Math.max(0, saldoDisponivelConstrutora - totalSinal - totalIntermediarias);
-              const tot = qO + qP;
-              if (tot > 0) {
-                const valParc = Math.floor((restante / tot) * 100) / 100;
-                setValorParcelaObra(valParc);
-                setValorParcelaPosObra(valParc);
-                setDisplayParcelaObra(formatBRL(valParc));
-                setDisplayParcelaPosObra(formatBRL(valParc));
-              }
-            }}
-            className={`py-3 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              tipoEstrutura === 'planta'
-                ? 'bg-gradient-to-r from-[#FF600B] to-[#D94D00] text-white shadow-md shadow-[#FF600B]/25'
-                : 'text-[#A3A3A3] hover:text-white hover:bg-[#262626]'
-            }`}
-          >
-            <Calendar className="w-4 h-4 flex-shrink-0" />
-            <span>OBRA + PÓS-OBRA (74x)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setTipoEstrutura('direto');
-              setQtdParcelasPosObra(0);
-              setValorParcelaPosObra(0);
-              setDisplayParcelaPosObra('');
-              const qO = qtdParcelasObra > 0 ? qtdParcelasObra : 30;
-              setQtdParcelasObra(qO);
-              const restante = Math.max(0, saldoDisponivelConstrutora - totalSinal - totalIntermediarias);
-              if (qO > 0) {
-                const valParc = Math.floor((restante / qO) * 100) / 100;
-                setValorParcelaObra(valParc);
-                setDisplayParcelaObra(formatBRL(valParc));
-              }
-            }}
-            className={`py-3 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              tipoEstrutura === 'direto'
-                ? 'bg-gradient-to-r from-[#FF600B] to-[#D94D00] text-white shadow-md shadow-[#FF600B]/25'
-                : 'text-[#A3A3A3] hover:text-white hover:bg-[#262626]'
-            }`}
-          >
-            <Sliders className="w-4 h-4 flex-shrink-0" />
-            <span>APENAS OBRA (30x)</span>
-          </button>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 3. PAINEL DE CONTROLE DO SALDO PRÓ-SOLUTO */}
           <div className="bg-[#1A1A1A] p-5 rounded-2xl border-2 border-[#FF600B]/40 shadow-md space-y-3.5">
@@ -427,19 +316,10 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
                 </div>
               )}
 
-              {totalObra > 0 && (
+              {totalConstrutora > 0 && (
                 <div className="flex justify-between items-center text-[#FF7A00]">
-                  <span className="font-semibold">
-                    (-) Durante a Obra ({qtdParcelasObra}x{sobraCentavos > 0 ? ` • 1ª de ${formatBRL(primeiraParcelaObra)}` : ''}):
-                  </span>
-                  <span className="font-bold">{formatBRL(totalObra)}</span>
-                </div>
-              )}
-
-              {tipoEstrutura === 'planta' && totalPosObra > 0 && (
-                <div className="flex justify-between items-center text-[#FF7A00]">
-                  <span className="font-semibold">(-) Pós-obra / Pós-chaves ({qtdParcelasPosObra}x de {formatBRL(valorParcelaPosObra)}):</span>
-                  <span className="font-bold">{formatBRL(totalPosObra)}</span>
+                  <span className="font-semibold">(-) Construtora (48x de {formatBRL(valorParcelaObra)}):</span>
+                  <span className="font-bold">{formatBRL(totalConstrutora)}</span>
                 </div>
               )}
             </div>
@@ -540,7 +420,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
               </button>
 
               <div className="flex items-center gap-1">
-                {[1, 2, 3, 4].map((qtd) => (
+                {[1, 2, 3, 4, 5, 6].map((qtd) => (
                   <button
                     key={qtd}
                     type="button"
@@ -627,118 +507,28 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
             )}
           </div>
 
-          {/* 6. PARCELAMENTO DURANTE A OBRA & PÓS-OBRA */}
-          <div className="space-y-4">
-            {/* Durante a Obra (INCC) */}
-            <div className="bg-[#1A1A1A] p-4.5 rounded-2xl border border-[#2A2A2A] space-y-3.5">
-              <div className="flex items-center justify-between border-b border-[#2A2A2A] pb-2">
-                <span className="text-xs font-black text-[#FF600B] uppercase tracking-wider flex items-center gap-1.5">
-                  <Building2 className="w-4 h-4 text-[#FF600B]" />
-                  DURANTE A OBRA (INCC)
-                </span>
-                <span className="text-xs font-bold text-[#A3A3A3]">
-                  Total: {formatBRL(totalObra)}
-                </span>
+          {/* 6. PARCELAMENTO COM A CONSTRUTORA - 48X */}
+          <div className="bg-[#1A1A1A] p-4.5 rounded-2xl border border-[#2A2A2A] space-y-3.5">
+            <div className="flex items-center justify-between border-b border-[#2A2A2A] pb-2">
+              <span className="text-xs font-black text-[#FF600B] uppercase tracking-wider flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-[#FF600B]" />
+                CONSTRUTORA (48X)
+              </span>
+              <span className="text-xs font-bold text-[#A3A3A3]">Total: {formatBRL(totalConstrutora)}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-[#A3A3A3] uppercase mb-1">Quantidade de parcelas</label>
+                <div className="bg-[#111111] border border-[#2E2E2E] px-3 py-2 rounded-xl text-white font-black text-sm">48x fixas</div>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-[#A3A3A3] uppercase mb-1">
-                    Quantidade de Parcelas
-                  </label>
-                  <div className="flex items-center gap-1.5 bg-[#111111] border border-[#2E2E2E] px-3 py-2 rounded-xl focus-within:border-[#FF600B]">
-                    <input
-                      type="number"
-                      min="1"
-                      max="60"
-                      value={qtdParcelasObra || ''}
-                      onChange={(e) => setQtdParcelasObra(Math.max(1, Number(e.target.value) || 1))}
-                      className="w-full bg-transparent font-black text-white text-sm outline-none"
-                    />
-                    <span className="text-xs font-bold text-[#71717A]">x</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-[#A3A3A3] uppercase mb-1">
-                    Valor da Parcela Mensal
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={displayParcelaObra}
-                    onChange={handleParcelaObraChange}
-                    placeholder="R$ 0,00"
-                    className="w-full bg-[#111111] border border-[#2E2E2E] focus:border-[#FF600B] text-white font-black text-sm rounded-xl px-3 py-2 outline-none placeholder:text-[#52525B]"
-                  />
-                </div>
-              </div>
-
-              {sobraCentavos > 0 && (
-                <div className="bg-[#111111] px-3 py-2 rounded-xl border border-[#2A2A2A] text-xs flex items-center justify-between text-[#A3A3A3]">
-                  <span>1ª parcela com ajuste de centavos:</span>
-                  <strong className="text-white font-black">{formatBRL(primeiraParcelaObra)}</strong>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between bg-[#111111] p-2.5 rounded-xl border border-[#2A2A2A] text-xs">
-                <span className="text-[#A3A3A3] font-medium">Correção monetária durante a obra:</span>
-                <span className="font-bold text-[#FF600B]">{correcaoObra || 'INCC'}</span>
+              <div>
+                <label className="block text-[11px] font-bold text-[#A3A3A3] uppercase mb-1">Valor de cada parcela</label>
+                <input type="text" inputMode="numeric" value={displayParcelaObra} onChange={handleParcelaObraChange}
+                  placeholder="R$ 0,00"
+                  className="w-full bg-[#111111] border border-[#2E2E2E] focus:border-[#FF600B] text-white font-black text-sm rounded-xl px-3 py-2 outline-none placeholder:text-[#52525B]" />
               </div>
             </div>
-
-            {/* Pós-Obra / Pós-Chaves (IPCA + 1,99% a.a.) */}
-            {tipoEstrutura === 'planta' && (
-              <div className="bg-[#1A1A1A] p-4.5 rounded-2xl border border-[#2A2A2A] space-y-3.5">
-                <div className="flex items-center justify-between border-b border-[#2A2A2A] pb-2">
-                  <span className="text-xs font-black text-[#FF7A00] uppercase tracking-wider flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4 text-[#FF7A00]" />
-                    PÓS-CHAVES / PÓS-OBRA (INC)
-                  </span>
-                  <span className="text-xs font-bold text-[#A3A3A3]">
-                    Total: {formatBRL(totalPosObra)}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#A3A3A3] uppercase mb-1">
-                      Quantidade de Parcelas
-                    </label>
-                    <div className="flex items-center gap-1.5 bg-[#111111] border border-[#2E2E2E] px-3 py-2 rounded-xl focus-within:border-[#FF600B]">
-                      <input
-                        type="number"
-                        min="1"
-                        max="80"
-                        value={qtdParcelasPosObra || ''}
-                        onChange={(e) => setQtdParcelasPosObra(Math.max(1, Number(e.target.value) || 1))}
-                        className="w-full bg-transparent font-black text-white text-sm outline-none"
-                      />
-                      <span className="text-xs font-bold text-[#71717A]">x</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#A3A3A3] uppercase mb-1">
-                      Valor da Parcela Mensal
-                    </label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={displayParcelaPosObra}
-                      onChange={handleParcelaPosObraChange}
-                      placeholder="R$ 0,00"
-                      className="w-full bg-[#111111] border border-[#2E2E2E] focus:border-[#FF600B] text-white font-black text-sm rounded-xl px-3 py-2 outline-none placeholder:text-[#52525B]"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between bg-[#111111] p-2.5 rounded-xl border border-[#2A2A2A] text-xs">
-                  <span className="text-[#A3A3A3] font-medium">Correção monetária pós-chaves:</span>
-                  <span className="font-bold text-[#FF7A00]">{correcaoPosObra || 'IPCA + 1,99% a.a.'}</span>
-                </div>
-              </div>
-            )}
+            <p className="text-[10px] text-[#A3A3A3]">Informe manualmente o valor mensal da construtora. O total será calculado em 48 parcelas.</p>
           </div>
 
           {/* 7. DOCUMENTAÇÃO (ITBI + REGISTRO) */}

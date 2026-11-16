@@ -97,10 +97,10 @@ export default function App() {
   const [percentualEncash, setPercentualEncash] = useState<number>(22);
   const [qtdParcelasEncash, setQtdParcelasEncash] = useState<number>(72);
 
-  // INC Developer Flow Configuration (30x Obra + 44x Pós-Obra)
-  const [qtdParcelasObra, setQtdParcelasObra] = useState<number>(30);
+  // Fluxo INC: 48 parcelas fixas com a construtora
+  const [qtdParcelasObra, setQtdParcelasObra] = useState<number>(48);
   const [valorParcelaObra, setValorParcelaObra] = useState<number>(0);
-  const [qtdParcelasPosObra, setQtdParcelasPosObra] = useState<number>(44);
+  const [qtdParcelasPosObra, setQtdParcelasPosObra] = useState<number>(0);
   const [valorParcelaPosObra, setValorParcelaPosObra] = useState<number>(0);
   const [correcaoObra, setCorrecaoObra] = useState<string>('INCC');
   const [correcaoPosObra, setCorrecaoPosObra] = useState<string>('IPCA + 1,99% a.a.');
@@ -222,9 +222,9 @@ export default function App() {
     setPercentualEncash(22);
     setQtdParcelasEncash(72);
     setIntermediarias([]);
-    setQtdParcelasObra(30);
+    setQtdParcelasObra(48);
     setValorParcelaObra(0);
-    setQtdParcelasPosObra(44);
+    setQtdParcelasPosObra(0);
     setValorParcelaPosObra(0);
     setPropertyDetails({
       empreendimentoId: defaultEmp.id,

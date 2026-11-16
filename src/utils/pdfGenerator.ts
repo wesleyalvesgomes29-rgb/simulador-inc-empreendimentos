@@ -196,23 +196,13 @@ export async function generateProposalPdf(params: GeneratePdfParams): Promise<vo
         </div>
         ` : ''}
 
-        <div style="display: grid; grid-template-columns: ${qtdParcelasPosObra > 0 ? '1fr 1fr' : '1fr'}; gap: 12px; margin-bottom: 12px;">
-          ${qtdParcelasObra > 0 ? `
-          <div style="background-color: ${innerBoxBg}; padding: 14px; border-radius: 10px; border: 1px solid #FF600B;">
-            <div style="font-size: 11px; font-weight: 800; color: #FF600B; text-transform: uppercase;">DURANTE A OBRA (${qtdParcelasObra}x)</div>
-            <div style="font-size: 19px; font-weight: 900; color: ${textColor}; margin-top: 4px;">${formatBRL(valorParcelaObra)}</div>
-            <div style="font-size: 10px; color: ${textMuted}; margin-top: 2px;">Correção: ${correcaoObra || 'INCC'}</div>
-          </div>
-          ` : ''}
-
-          ${qtdParcelasPosObra > 0 ? `
-          <div style="background-color: ${innerBoxBg}; padding: 14px; border-radius: 10px; border: 1px solid ${borderColor};">
-            <div style="font-size: 11px; font-weight: 800; color: #FF7A00; text-transform: uppercase;">PÓS-CHAVES / PÓS-OBRA (${qtdParcelasPosObra}x)</div>
-            <div style="font-size: 19px; font-weight: 900; color: ${textColor}; margin-top: 4px;">${formatBRL(valorParcelaPosObra)}</div>
-            <div style="font-size: 10px; color: ${textMuted}; margin-top: 2px;">Correção: ${correcaoPosObra || 'IPCA + 1,99% a.a.'}</div>
-          </div>
-          ` : ''}
+        ${valorParcelaObra > 0 ? `
+        <div style="background-color: ${innerBoxBg}; padding: 14px; border-radius: 10px; border: 1px solid #FF600B; margin-bottom: 12px;">
+          <div style="font-size: 11px; font-weight: 800; color: #FF600B; text-transform: uppercase;">CONSTRUTORA (48X)</div>
+          <div style="font-size: 19px; font-weight: 900; color: ${textColor}; margin-top: 4px;">${formatBRL(valorParcelaObra)} por mês</div>
+          <div style="font-size: 10px; color: ${textMuted}; margin-top: 2px;">Total em 48 parcelas: ${formatBRL(valorParcelaObra * 48)}</div>
         </div>
+        ` : ''}
 
         ${totalIntermediarias > 0 ? `
         <div style="background-color: ${innerBoxBg}; border: 1px solid ${borderColor}; border-left: 4px solid #FF600B; padding: 12px 14px; border-radius: 8px; margin-bottom: 10px;">
