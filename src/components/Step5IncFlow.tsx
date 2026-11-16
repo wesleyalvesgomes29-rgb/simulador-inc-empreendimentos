@@ -274,8 +274,14 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#111] rounded-xl p-3"><span className="text-[10px] text-[#A3A3A3] block">Total estimado Encash</span><strong className="text-white text-lg">{formatBRL(valorEncashEstimado)}</strong></div>
-            <div className="bg-[#111] rounded-xl p-3"><span className="text-[10px] text-[#A3A3A3] block">Parcela estimada ({qtdParcelasEncash}x)</span><strong className="text-white text-lg">{formatBRL(parcelaEncashEstimada)}</strong></div>
+            <div className="rounded-xl p-3 border border-[#3A3A3A]" style={{ backgroundColor: '#111111' }}>
+              <span className="text-[10px] block" style={{ color: '#A3A3A3' }}>Total estimado Encash</span>
+              <strong className="text-lg font-black block mt-1" style={{ color: '#FFFFFF' }}>{formatBRL(valorEncashEstimado)}</strong>
+            </div>
+            <div className="rounded-xl p-3 border border-[#3A3A3A]" style={{ backgroundColor: '#111111' }}>
+              <span className="text-[10px] block" style={{ color: '#A3A3A3' }}>Parcela estimada ({qtdParcelasEncash}x)</span>
+              <strong className="text-lg font-black block mt-1" style={{ color: '#FFFFFF' }}>{formatBRL(parcelaEncashEstimada)}</strong>
+            </div>
           </div>
           <p className="text-[10px] leading-relaxed text-[#A3A3A3]">Simulação estimada. A condição efetiva depende da análise e aprovação do CPF pela Encash.</p>
           {saldoAposEncash < 0 && <p className="text-xs text-rose-300 font-bold">A estimativa Encash ultrapassa o saldo de entrada em {formatBRL(Math.abs(saldoAposEncash))}.</p>}
