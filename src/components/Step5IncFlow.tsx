@@ -420,7 +420,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
               </button>
 
               <div className="flex items-center gap-1">
-                {[1, 2, 3, 4].map((qtd) => (
+                {[1, 2, 3, 4, 5, 6].map((qtd) => (
                   <button
                     key={qtd}
                     type="button"
