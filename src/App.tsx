@@ -94,6 +94,8 @@ export default function App() {
   const [subsidioCaixa, setSubsidioCaixa] = useState<number>(32500);
   const [fgts, setFgts] = useState<number>(0);
   const [sinalAVista, setSinalAVista] = useState<number>(0);
+  const [percentualEncash, setPercentualEncash] = useState<number>(22);
+  const [qtdParcelasEncash, setQtdParcelasEncash] = useState<number>(72);
 
   // INC Developer Flow Configuration (30x Obra + 44x Pós-Obra)
   const [qtdParcelasObra, setQtdParcelasObra] = useState<number>(30);
@@ -217,6 +219,8 @@ export default function App() {
     setIsCotista(true);
     setFgts(0);
     setSinalAVista(0);
+    setPercentualEncash(22);
+    setQtdParcelasEncash(72);
     setIntermediarias([]);
     setQtdParcelasObra(30);
     setValorParcelaObra(0);
@@ -333,6 +337,10 @@ export default function App() {
               propertyDetails={propertyDetails}
               valorImovel={valorImovel}
               saldoEntrada={saldoEntrada}
+              percentualEncash={percentualEncash}
+              setPercentualEncash={setPercentualEncash}
+              qtdParcelasEncash={qtdParcelasEncash}
+              setQtdParcelasEncash={setQtdParcelasEncash}
               sinalAVista={sinalAVista}
               setSinalAVista={setSinalAVista}
               qtdParcelasObra={qtdParcelasObra}
@@ -377,6 +385,8 @@ export default function App() {
               subsidioCaixa={subsidioCaixa}
               fgts={fgts}
               sinalAVista={sinalAVista}
+              percentualEncash={percentualEncash}
+              qtdParcelasEncash={qtdParcelasEncash}
               qtdParcelasObra={qtdParcelasObra}
               valorParcelaObra={valorParcelaObra}
               qtdParcelasPosObra={qtdParcelasPosObra}
