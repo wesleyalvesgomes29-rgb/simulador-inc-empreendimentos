@@ -118,16 +118,16 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   const handlePercentualEncashChange = (value: string) => {
     setDisplayPercentualEncash(value);
     const numericValue = Number(value.replace(',', '.'));
-    if (value.trim() !== '' && Number.isFinite(numericValue) && numericValue >= 12 && numericValue <= 22) {
-      setPercentualEncash(numericValue);
+    if (value.trim() !== '' && Number.isFinite(numericValue)) {
+      setPercentualEncash(Math.min(25, Math.max(0, numericValue)));
     }
   };
 
   const handlePercentualEncashBlur = () => {
     const numericValue = Number(displayPercentualEncash.replace(',', '.'));
     const safeValue = displayPercentualEncash.trim() === '' || !Number.isFinite(numericValue)
-      ? 12
-      : Math.min(22, Math.max(12, numericValue));
+      ? 0
+      : Math.min(25, Math.max(0, numericValue));
     setPercentualEncash(safeValue);
     setDisplayPercentualEncash(String(safeValue));
   };
@@ -135,7 +135,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   // Encash: modelo-base estimado a partir das operações reais informadas.
   // Capitaliza 1,45% a.m. por 36 meses sobre o valor liberado e divide
   // o montante projetado pelo prazo selecionado (até 72 parcelas fixas).
-  const percentualEncashSeguro = Math.min(22, Math.max(12, Number(percentualEncash) || 22));
+  const percentualEncashSeguro = Math.min(25, Math.max(0, Number(percentualEncash) || 0));
   const valorEncashEstimado = Number((valorImovel * percentualEncashSeguro / 100).toFixed(2));
   const taxaEncashMensal = 0.0145;
   const mesesProjecaoEncash = 36;
@@ -299,8 +299,8 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
         <div className="bg-[#1A1A1A] p-4 rounded-2xl border-2 border-[#FF600B]/50 mb-5 space-y-3">
           <div className="flex items-center justify-between"><span className="text-xs font-black text-[#FF600B] uppercase tracking-wider">ENCASH • ESTIMATIVA</span><span className="text-[10px] text-[#A3A3A3]">Base: valor de venda</span></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-[10px] text-[#A3A3A3] font-bold uppercase mb-1">Percentual (12% a 22%)</label>
-              <div className="flex items-center gap-2"><input type="text" inputMode="decimal" minLength={1} value={displayPercentualEncash} onChange={(e) => handlePercentualEncashChange(e.target.value)} onBlur={handlePercentualEncashBlur} onFocus={(e) => e.currentTarget.select()} aria-label="Percentual Encash entre 12 e 22" className="w-full bg-white border border-[#FF600B] rounded-xl px-3 py-2 text-[#171717] font-black outline-none focus:ring-2 focus:ring-[#FF600B]/30" /><span className="text-white font-bold">%</span></div>
+            <div><label className="block text-[10px] text-[#A3A3A3] font-bold uppercase mb-1">Percentual (até 25%)</label>
+              <div className="flex items-center gap-2"><input type="text" inputMode="decimal" minLength={1} value={displayPercentualEncash} onChange={(e) => handlePercentualEncashChange(e.target.value)} onBlur={handlePercentualEncashBlur} onFocus={(e) => e.currentTarget.select()} aria-label="Percentual Encash de 0 a 25" className="w-full bg-white border border-[#FF600B] rounded-xl px-3 py-2 text-[#171717] font-black outline-none focus:ring-2 focus:ring-[#FF600B]/30" /><span className="text-white font-bold">%</span></div>
             </div>
             <div><label className="block text-[10px] text-[#A3A3A3] font-bold uppercase mb-1">Prazo Encash</label>
               <select value={qtdParcelasEncash} onChange={(e) => setQtdParcelasEncash(Math.min(72, Math.max(1, Number(e.target.value))))} className="w-full bg-[#111] border border-[#333] rounded-xl px-3 py-2 text-white font-bold outline-none focus:border-[#FF600B]">{Array.from({length:72},(_,i)=>i+1).map(n=><option key={n} value={n}>{n}x</option>)}</select>
