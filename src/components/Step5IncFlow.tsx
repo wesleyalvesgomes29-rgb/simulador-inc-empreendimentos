@@ -117,11 +117,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   const saldoAposEncash = Number((saldoEntrada - valorEncashEstimado).toFixed(2));
   const saldoDisponivelConstrutora = Math.max(0, saldoAposEncash);
   const totalSinal = sinalAVista || 0;
-  // Cada balão/intermediária tem limite comercial de R$ 2.000,00.
-  const totalIntermediarias = (intermediarias || []).reduce(
-    (acc, item) => acc + Math.min(2000, Math.max(0, item.valor || 0)),
-    0
-  );
+  const totalIntermediarias = (intermediarias || []).reduce((acc, item) => acc + (item.valor || 0), 0);
 
   // Regra INC: sinal e balões são opcionais. Todo o saldo que não for
   // destinado a eles fica automaticamente com a construtora em 48 parcelas.
@@ -194,7 +190,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
   };
 
   const handleIntermediariaValorChange = (id: string, rawVal: string) => {
-    const num = Math.min(2000, Math.max(0, parseBRLInput(rawVal)));
+    const num = parseBRLInput(rawVal);
     setIntermediarias(
       (intermediarias || []).map((it) => (it.id === id ? { ...it, valor: num } : it))
     );
@@ -493,7 +489,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div>
                         <label className="block text-[10px] font-bold text-[#A3A3A3] uppercase mb-1">
-                          Valor da Intermediária (máx. R$ 2.000,00)
+                          Valor da Intermediária
                         </label>
                         <input
                           type="text"
@@ -545,7 +541,7 @@ export const Step5IncFlow: React.FC<Step5IncFlowProps> = ({
                 </div>
               </div>
             </div>
-            <p className="text-[10px] text-[#A3A3A3]">Cada balão pode ter até R$ 2.000,00. O saldo restante, após Encash, sinal e balões, vai automaticamente para a construtora em 48 parcelas.</p>
+            <p className="text-[10px] text-[#A3A3A3]">Valor calculado automaticamente: saldo restante após sinal e balões, dividido em 48 parcelas.</p>
           </div>
 
           {/* 7. DOCUMENTAÇÃO (ITBI + REGISTRO) */}
